@@ -2,7 +2,7 @@ from PIL import Image
 from io import BytesIO
 
 from datasets import load_dataset
-# from huggingface_hub import snapshot_download
+from huggingface_hub import snapshot_download
 
 
 def save_graph(agent):
