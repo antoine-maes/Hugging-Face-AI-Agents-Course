@@ -1,10 +1,7 @@
 import os
-from azure.identity import DefaultAzureCredential
 from langchain_openai import ChatOpenAI
-from langchain_ollama import ChatOllama
 from langchain_core.messages import SystemMessage
 from langchain.agents import create_agent
-from pydantic import BaseModel
 from dotenv import load_dotenv
 
 from src.agent.prompt import format_system_prompt

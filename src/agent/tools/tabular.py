@@ -4,6 +4,18 @@ import openpyxl
 import json
 
 
+def _extract_color_hex(cell) -> str:
+    """Extract a 6-digit hex color from an openpyxl cell. Defaults to white."""
+    try:
+        if cell.fill and cell.fill.fgColor:
+            rgb = cell.fill.fgColor.rgb
+            if rgb and len(str(rgb)) > 2:
+                return str(rgb)[-6:].upper()
+    except Exception:
+        pass
+    return "FFFFFF"
+
+
 @tool
 def read_grid_file(file_path: str) -> str:
     """
@@ -18,39 +30,22 @@ def read_grid_file(file_path: str) -> str:
         cells_data = []
 
         if file_path.endswith(".xlsx"):
-            # Read Excel file with data_only=True to get calculated values
+            # Load once for values, once for styles (colors)
             wb = openpyxl.load_workbook(file_path, data_only=True)
-
-            # Check if workbook has sheets
             if not wb.sheetnames:
-                return f"Error: Excel file has no sheets."
-
-            # Get the first sheet
+                return "Error: Excel file has no sheets."
             ws = wb[wb.sheetnames[0]]
-
             if ws is None:
-                return f"Error: Could not access worksheet."
+                return "Error: Could not access worksheet."
+
+            wb_colors = openpyxl.load_workbook(file_path)
+            ws_colors = wb_colors[wb.sheetnames[0]]
 
             for row in ws.iter_rows(max_row=ws.max_row, max_col=ws.max_column):
                 for cell in row:
-                    # Get cell position (e.g., A1, B2)
                     position = cell.coordinate
-
-                    # Get cell value
                     value = cell.value if cell.value is not None else ""
-
-                    # Get cell color (hex code) - need to reload with data_only=False for colors
-                    color_hex = "FFFFFF"  # Default white
-                    try:
-                        wb_colors = openpyxl.load_workbook(file_path)
-                        ws_colors = wb_colors[wb.sheetnames[0]]
-                        cell_colors = ws_colors[position]
-                        if cell_colors.fill and cell_colors.fill.fgColor:
-                            rgb = cell_colors.fill.fgColor.rgb
-                            if rgb and len(str(rgb)) > 2:
-                                color_hex = str(rgb)[-6:].upper()
-                    except:
-                        pass  # Keep default color if can't read
+                    color_hex = _extract_color_hex(ws_colors[position])
 
                     cells_data.append(
                         {
@@ -86,7 +81,7 @@ def read_grid_file(file_path: str) -> str:
                     )
 
         else:
-            return f"Error: Unsupported file format. Only .xlsx and .csv are supported."
+            return "Error: Unsupported file format. Only .xlsx and .csv are supported."
 
         # Return formatted JSON
         return json.dumps(cells_data, indent=2)
@@ -110,31 +105,19 @@ def get_cell_info(file_path: str, cell_position: str) -> str:
     try:
         if file_path.endswith(".xlsx"):
             wb = openpyxl.load_workbook(file_path, data_only=True)
-
-            # Check if workbook has sheets
             if not wb.sheetnames:
-                return f"Error: Excel file has no sheets."
+                return "Error: Excel file has no sheets."
 
             ws = wb[wb.sheetnames[0]]
             if ws is None:
-                return f"Error: Could not access worksheet."
+                return "Error: Could not access worksheet."
 
             cell = ws[cell_position]
-
             value = cell.value if cell.value is not None else ""
-            color_hex = "FFFFFF"
 
-            # Try to read color from the workbook
-            try:
-                wb_colors = openpyxl.load_workbook(file_path)
-                ws_colors = wb_colors[wb.sheetnames[0]]
-                cell_colors = ws_colors[cell_position]
-                if cell_colors.fill and cell_colors.fill.fgColor:
-                    rgb = cell_colors.fill.fgColor.rgb
-                    if rgb and len(str(rgb)) > 2:
-                        color_hex = str(rgb)[-6:].upper()
-            except:
-                pass  # Keep default color
+            wb_colors = openpyxl.load_workbook(file_path)
+            ws_colors = wb_colors[wb.sheetnames[0]]
+            color_hex = _extract_color_hex(ws_colors[cell_position])
 
             result = {
                 "position": cell_position,
@@ -144,7 +127,8 @@ def get_cell_info(file_path: str, cell_position: str) -> str:
             return json.dumps(result)
 
         else:
-            return f"Only Excel files are supported for specific cell lookup."
+            return "Only Excel files are supported for specific cell lookup."
 
     except Exception as e:
         return f"Error getting cell {cell_position}: {str(e)}"
+

@@ -1,4 +1,5 @@
 import os
+import re
 import uuid
 
 from langchain_core.runnables import RunnableConfig
@@ -42,7 +43,6 @@ for i, example in enumerate(dataset):
     print(f" Full Response: {full_message}")
 
     # Extract clean final answer
-    import re
     match = re.search(r"final\s*answer\s*:\s*(.*)", full_message, re.IGNORECASE | re.DOTALL)
     cleaned_message = match.group(1).strip().strip('"\'') if match else full_message.strip()
     
