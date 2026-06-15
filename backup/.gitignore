@@ -1,0 +1,7 @@
+.langgraph_api
+.venv
+gaia_data
+
+__pycache__
+
+.env
