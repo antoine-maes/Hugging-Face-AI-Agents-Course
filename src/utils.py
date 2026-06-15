@@ -1,8 +1,12 @@
 from PIL import Image
 from io import BytesIO
+import os
+from dotenv import load_dotenv
 
 from datasets import load_dataset
 from huggingface_hub import snapshot_download
+
+load_dotenv()
 
 
 def save_graph(agent):

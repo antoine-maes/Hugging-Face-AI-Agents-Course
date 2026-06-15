@@ -14,7 +14,7 @@ dataset = import_dataset(data_dir)
 dataset = dataset.shuffle(seed=42).select(range(1))
 
 
-for i, example in enumerate(dataset):  # type: ignore
+for i, example in enumerate(dataset):
     example: dict = example
     question = example["Question"]
     answer = example["Final answer"]
@@ -37,16 +37,19 @@ for i, example in enumerate(dataset):  # type: ignore
     response = agent.invoke(
         {"messages": [{"role": "user", "content": message_invoke}]}, config
     )
-    # print(
-    #     "Structured Response:", response["structured_response"]
-    # )  # Answer(answer=..., confidence=...)
+    
+    full_message = response["messages"][-1].content
+    print(f" Full Response: {full_message}")
 
-    message = response["messages"][-1].content
-    print(f" Response: {message}")
-
+    # Extract clean final answer
+    import re
+    match = re.search(r"final\s*answer\s*:\s*(.*)", full_message, re.IGNORECASE | re.DOTALL)
+    cleaned_message = match.group(1).strip().strip('"\'') if match else full_message.strip()
+    
+    print(f" Extracted Answer: {cleaned_message}")
     print(f"Expected Answer: {answer[:50]}")
     print(f"Thread ID (visible in Studio): {thread_id}")
-    if answer == message:
+    if answer.strip().lower() == cleaned_message.lower():
         print("✅ Correct answer!\n")
     else:
         print("❌ Incorrect answer.\n")
